@@ -4,8 +4,8 @@
 #include <utility>
 
 namespace base {
-    Buffer::Buffer(size_t byte_size, std::shared_ptr<DeviceAllocator> allocator, void *ptr, bool use_external)
-            : byte_size_(byte_size), allocator_(std::move(allocator)), ptr_(ptr), use_external_(use_external) {
+    Buffer::Buffer(const size_t byte_size, std::shared_ptr<DeviceAllocator> allocator, void *ptr, const bool use_external)
+            : byte_size_(byte_size), ptr_(ptr), use_external_(use_external), allocator_(std::move(allocator)) {
         if (!ptr_ && allocator_) {
             device_type_ = allocator_->device_type();
             use_external_ = false;
@@ -40,12 +40,10 @@ namespace base {
             ptr_ = allocator_->allocate(byte_size_);
             if (!ptr_) {
                 return false;
-            } else {
-                return true;
             }
-        } else {
-            return false;
+            return true;
         }
+        return false;
     }
 
     std::shared_ptr<DeviceAllocator> Buffer::allocator() const {
