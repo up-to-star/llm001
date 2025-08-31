@@ -9,7 +9,7 @@ namespace base {
     private:
         size_t byte_size_ = 0;
         void *ptr_ = nullptr;
-        bool use_external_ = false;
+        bool use_external_ = false; // 收否拥有这块数据的所有权
         DeviceType device_type_ = DeviceType::kDeviceUnknown;
         std::shared_ptr<DeviceAllocator> allocator_;
 
