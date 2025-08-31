@@ -1,3 +1,7 @@
 .vscode
 .venv
 .python-version
+MyInfer/.idea
+MyInfer/cmake-build-debug
+MyInfer/cmake-build-release
+.idea
