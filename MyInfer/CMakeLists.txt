@@ -23,10 +23,12 @@ find_package(glog REQUIRED)
 find_package(Armadillo REQUIRED)
 
 aux_source_directory(kuiper/source/base DIR_BASE)
+aux_source_directory(kuiper/source/op DIR_OP)
+aux_source_directory(kuiper/source/tensor DIR_TENSOR)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
-add_library(llama SHARED ${DIR_BASE})
+add_library(llama SHARED ${DIR_BASE} ${DIR_OP} ${DIR_TENSOR})
 target_link_libraries(llama sentencepiece glog::glog gtest gtest_main pthread cudart armadillo)
 target_link_directories(llama PUBLIC ${CMAKE_CUDA_COMPILER_LIBRARY_ROOT}/lib64)
 

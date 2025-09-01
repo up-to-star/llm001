@@ -34,7 +34,7 @@ namespace tensor {
 
         bool is_empty() const;
 
-        void init_buffer(std::shared_ptr<base::DeviceAllocator> alloc, base::DataType data_type, bool need_alloc,
+        void init_buffer(const std::shared_ptr<base::DeviceAllocator>& alloc, base::DataType data_type, bool need_alloc,
                          void *ptr);
 
         template<typename T>
@@ -61,7 +61,7 @@ namespace tensor {
 
         std::vector<int32_t> strides() const;
 
-        bool assign(std::shared_ptr<base::Buffer> buffer);
+        bool assign(const std::shared_ptr<base::Buffer> &buffer);
 
         void reset(base::DataType data_type, const std::vector<int32_t> &dims);
 
@@ -69,7 +69,7 @@ namespace tensor {
 
         base::DeviceType device_type() const;
 
-        bool allocate(std::shared_ptr<base::DeviceAllocator> allocator, bool need_realloc = false);
+        bool allocate(const std::shared_ptr<base::DeviceAllocator> &allocator, bool need_realloc = false);
 
         template<typename T>
         T *ptr(int64_t index);
