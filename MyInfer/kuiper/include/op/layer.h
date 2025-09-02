@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "base/base.h"
+#include "base/cuda_config.h"
 #include "tensor/tensor.h"
 
 
@@ -23,6 +24,8 @@ namespace op {
 
     class BaseLayer {
     public:
+        virtual ~BaseLayer() = default;
+
         explicit BaseLayer(base::DeviceType device_type, LayerType layer_type, base::DataType data_type,
                            std::string layer_name = "");
 
@@ -86,5 +89,69 @@ namespace op {
         LayerType layer_type_ = LayerType::kLayerUnknown;
         base::DataType data_type_ = base::DataType::kDataTypeUnknown;
         base::DeviceType device_type_ = base::DeviceType::kDeviceUnknown;
+    };
+
+    class Layer : public BaseLayer {
+    public:
+        explicit Layer(base::DeviceType device_type, LayerType layer_type,
+                       std::string layer_name = "");
+
+        base::Status init() override;
+
+        base::Status check() const override;
+
+        base::Status check_tensor(const tensor::Tensor &tensor, base::DeviceType device_type,
+                                  base::DataType data_type) const;
+
+        base::Status check_tensor_with_dim(const tensor::Tensor &tensor, base::DeviceType device_type,
+                                           base::DataType data_type, ...) const;
+
+        base::Status forward() override;
+
+        base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &output1) override;
+
+        base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2,
+                             const tensor::Tensor &output1) override;
+
+        base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2, const tensor::Tensor &input3,
+                             const tensor::Tensor &output1) override;
+
+        base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2, const tensor::Tensor &input3,
+                             const tensor::Tensor &input4, const tensor::Tensor &output1) override;
+
+        base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2, const tensor::Tensor &input3,
+                             const tensor::Tensor &input4, const tensor::Tensor &input5,
+                             const tensor::Tensor &output1) override;
+
+        void set_input(int32_t idx, const tensor::Tensor &input) override;
+
+        void set_output(int32_t idx, const tensor::Tensor &output) override;
+
+        const tensor::Tensor &get_input(int32_t idx) const override;
+
+        const tensor::Tensor &get_output(int32_t idx) const override;
+
+        tensor::Tensor &get_input(int32_t idx) override;
+
+        tensor::Tensor &get_output(int32_t idx) override;
+
+        size_t input_size() const override;
+
+        size_t output_size() const override;
+
+        virtual void to_cuda();
+
+        void reset_input_size(size_t size);
+
+        void reset_output_size(size_t size);
+
+        void set_cuda_config(std::shared_ptr<kernel::CudaConfig> config);
+
+        std::shared_ptr<kernel::CudaConfig> cuda_config() const;
+
+    protected:
+        std::vector<tensor::Tensor> inputs_;
+        std::vector<tensor::Tensor> outputs_;
+        std::shared_ptr<kernel::CudaConfig> cuda_config_;
     };
 }
