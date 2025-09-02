@@ -16,8 +16,12 @@ namespace op {
         return layer_type_;
     }
 
-    std::string &BaseLayer::get_layer_name() const {
+    std::string BaseLayer::get_layer_name() const {
         return layer_name_;
+    }
+
+    base::Status BaseLayer::set_weight(int32_t idx, const tensor::Tensor &weight) {
+        return base::error::FunctionNotImplement()
     }
 
     void BaseLayer::set_layer_name(const std::string &layer_name) {

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "base/base.h"
+#include "tensor/tensor.h"
 
 
 namespace op {
@@ -33,9 +34,25 @@ namespace op {
 
         virtual base::Status forward() = 0;
 
-        virtual void set_input(int32_t idx) = 0;
+        virtual base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &output1) = 0;
 
-        virtual void set_output(int32_t idx) = 0;
+        virtual base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2,
+                                     const tensor::Tensor &output1) = 0;
+
+        virtual base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2,
+                                     const tensor::Tensor &input3, const tensor::Tensor &output1) = 0;
+
+        virtual base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2,
+                                     const tensor::Tensor &input3, const tensor::Tensor &input4,
+                                     const tensor::Tensor &output1) = 0;
+
+        virtual base::Status forward(const tensor::Tensor &input1, const tensor::Tensor &input2,
+                                     const tensor::Tensor &input3, const tensor::Tensor &input4,
+                                     const tensor::Tensor &input5, const tensor::Tensor &output1) = 0;
+
+        virtual void set_input(int32_t idx, const tensor::Tensor &input) = 0;
+
+        virtual void set_output(int32_t idx, const tensor::Tensor &output) = 0;
 
         virtual base::Status check() const = 0;
 
@@ -43,7 +60,20 @@ namespace op {
 
         virtual size_t output_size() const = 0;
 
-        virtual std::string &get_layer_name() const;
+        virtual std::string get_layer_name() const;
+
+        virtual tensor::Tensor &get_input(int32_t idx) = 0;
+
+        virtual tensor::Tensor &get_output(int32_t idx) = 0;
+
+        virtual const tensor::Tensor &get_input(int32_t idx) const = 0;
+
+        virtual const tensor::Tensor &get_output(int32_t idx) const = 0;
+
+        virtual base::Status set_weight(int32_t idx, const tensor::Tensor &weight);
+
+        virtual base::Status set_weight(int32_t idx, const std::vector<int32_t> &dims, const void *weight_ptr,
+                                        base::DeviceType device_type = base::DeviceType::kDeviceUnknown);
 
         void set_layer_name(const std::string &layer_name);
 

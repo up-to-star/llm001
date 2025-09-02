@@ -13,7 +13,7 @@ namespace tensor {
         return size;
     }
 
-    Tensor::Tensor(base::DataType data_type, int32_t dim0, const bool need_alloc,
+    Tensor::Tensor(const base::DataType data_type, int32_t dim0, const bool need_alloc,
                    const std::shared_ptr<base::DeviceAllocator> &alloc, void *ptr) : data_type_(data_type) {
         dims_.emplace_back(dim0);
         size_ = dim0;
