@@ -5,3 +5,4 @@ MyInfer/cmake-build-release
 ai-compiler/mlir/mlir-learn/install
 ai-compiler/mlir/mlir-learn/llvm-project
 ai-compiler/mlir/mlir-learn/mlir-toy/build
+ai-compiler/mlir/mlir-learn/mlir-toy/.cache

@@ -22,6 +22,9 @@ get_property(dialect_libs GLOBAL PROPERTY MLIR_DIALECT_LIBS)
 get_property(conversion_libs GLOBAL PROPERTY MLIR_CONVERSION_LIBS)
 get_property(extension_libs GLOBAL PROPERTY MLIR_EXTENSION_LIBS)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+
 include(TableGen)
 include(AddLLVM)
 include(AddMLIR)
@@ -31,10 +34,13 @@ include_directories(${LLVM_INCLUDE_DIRS} ${MLIR_INCLUDE_DIRS})
 
 add_executable(mlir-toy main.cpp)
 
+add_subdirectory(include)
+add_subdirectory(src)
 
-# target_link_libraries(ex1-io PRIVATE 
-#     MLIRIR 
-#     MLIRParser 
-#     MLIRFuncDialect
-#     MLIRArithDialect
-# )
+target_link_libraries(mlir-toy PRIVATE
+    MLIRLuminaDialect
+    MLIRIR
+    MLIRParser
+    MLIRFuncDialect
+    MLIRArithDialect
+)
