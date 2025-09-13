@@ -1,0 +1,7 @@
+MyInfer/.idea
+MyInfer/.vscode
+MyInfer/cmake-build-debug
+MyInfer/cmake-build-release
+ai-compiler/mlir/mlir-learn/install
+ai-compiler/mlir/mlir-learn/llvm-project
+ai-compiler/mlir/mlir-learn/mlir-toy/build
