@@ -43,4 +43,5 @@ target_link_libraries(mlir-toy PRIVATE
     MLIRParser
     MLIRFuncDialect
     MLIRArithDialect
+    MLIRGPUDialect
 )
