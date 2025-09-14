@@ -1,7 +1,7 @@
 include "mlir/IR/DialectBase.td"
 
 def LuminaDialect : Dialect {
-    let name = "Lumina";
+    let name = "lumina";
 
     let summary = "Lumina dialect";
 
@@ -15,6 +15,7 @@ def LuminaDialect : Dialect {
 
     let extraClassDeclaration = [{
         static void sayHello();
+        void registerType();
     }];
 
     let hasConstantMaterializer = 0;
@@ -31,7 +32,7 @@ def LuminaDialect : Dialect {
 
     let useDefaultAttributePrinterParser = 0;
 
-    let useDefaultTypePrinterParser = 0;
+    let useDefaultTypePrinterParser = 1;
 
     let hasCanonicalizer = 0;
 

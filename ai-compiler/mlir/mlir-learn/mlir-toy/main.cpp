@@ -1,5 +1,7 @@
 #include "Dialect/Lumina/IR/LuminaDialect.h"
+#include "Dialect/Lumina/IR/LuminaTypes.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
+#include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
 
@@ -104,8 +106,24 @@ void typeBrief() {
     delete context;
 }
 
+void myType() {
+    mlir::DialectRegistry registry;
+    mlir::MLIRContext context(registry);
+    // 加载注册方言
+    auto dialect = context.getOrLoadDialect<mlir::lumina::LuminaDialect>();
+    auto tm_tensor = mlir::lumina::LMTensorType::get(
+        &context, {1, 2, 3}, mlir::Float32Type::get(&context), 1);
+    tm_tensor.dump();
+
+    auto dy_tm_tensor = mlir::lumina::LMTensorType::get(
+        &context, {mlir::ShapedType::kDynamic, 2, 3},
+        mlir::Float32Type::get(&context), 1);
+    dy_tm_tensor.dump();
+}
+
 int main() {
     // testDialect();
-    typeBrief();
+    // typeBrief();
+    myType();
     return 0;
 }

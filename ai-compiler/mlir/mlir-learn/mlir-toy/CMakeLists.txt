@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(CMAKE_INSTALL_PREFIX "/home/cyj/study_space/llm001/ai-compiler/mlir/mlir-learn/install")
+set(CMAKE_INSTALL_PREFIX "/home/cyj/studyspace/llm001/ai-compiler/mlir/mlir-learn/install")
 project(mlir-toy LANGUAGES C CXX)
 
 cmake_policy(SET CMP0116 NEW)
@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-set(ENV{PATH} "/home/cyj/study_space/llm001/ai-compiler/mlir/mlir-learn/install/bin:\$ENV{PATH}")
+set(ENV{PATH} "/home/cyj/studyspace/llm001/ai-compiler/mlir/mlir-learn/install/bin:\$ENV{PATH}")
 
 add_compile_options(-g)
 

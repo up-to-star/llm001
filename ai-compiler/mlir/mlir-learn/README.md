@@ -1,8 +1,25 @@
-## build
+## build llvm-project
+```bash
+cd llvm-project
+mkdir build
+cd build
+
+cmake -G Ninja ../llvm \
+  -DCMAKE_INSTALL_PREFIX=/home/cyj/studyspace/llm001/ai-compiler/mlir/mlir-learn/install \
+  -DLLVM_ENABLE_PROJECTS=mlir \
+  -DLLVM_BUILD_EXAMPLES=ON \
+  -DLLVM_TARGETS_TO_BUILD="Native;NVPTX;AMDGPU" \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DLLVM_ENABLE_ASSERTIONS=ON
+
+ninja install
+```
+
+## build mlir-toy
 ```bash
 mkdir build
 cd build
-cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=/home/cyj/study_space/llm001/ai-compiler/mlir/mlir-learn/install
+cmake .. -GNinja -DCMAKE_INSTALL_PREFIX=/home/cyj/studyspace/llm001/ai-compiler/mlir/mlir-learn/install
 ```
 
 ## MLIR 内建Type
