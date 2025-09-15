@@ -1,6 +1,9 @@
+#include <memory>
+
 #include "Dialect/Lumina/IR/LuminaDialect.h"
 #include "Dialect/Lumina/IR/LuminaTypes.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
+#include "mlir/IR/BuiltinAttributes.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
@@ -121,9 +124,58 @@ void myType() {
     dy_tm_tensor.dump();
 }
 
+void attrBrief() {
+    auto context = std::make_shared<mlir::MLIRContext>();
+    context->getOrLoadDialect<mlir::lumina::LuminaDialect>();
+
+    auto f32_attr =
+        mlir::FloatAttr::get(mlir::Float32Type::get(context.get()), 1.0);
+    llvm::outs() << "F32 属性 :\t";
+    f32_attr.dump();
+
+    auto i32_attr =
+        mlir::IntegerAttr::get(mlir::IntegerType::get(context.get(), 32), 10);
+    llvm::outs() << "I32 属性 :\t";
+    i32_attr.dump();
+
+    auto stride_layout_attr =
+        mlir::StridedLayoutAttr::get(context.get(), 1, {6, 3, 1});
+    llvm::outs() << "StridedLayout 属性 :\t";
+    stride_layout_attr.dump();
+
+    auto str_attr = mlir::StringAttr::get(context.get(), "hello");
+    llvm::outs() << "String 属性 :\t";
+    str_attr.dump();
+
+    auto str_ref_attr = mlir::SymbolRefAttr::get(str_attr);
+    llvm::outs() << "SymbolRef 属性 :\t";
+    str_ref_attr.dump();
+
+    auto type_attr = mlir::TypeAttr::get(mlir::lumina::LMTensorType::get(
+        context.get(), {1, 2, 3}, mlir::Float32Type::get(context.get()), 1));
+    llvm::outs() << "Type 属性 :\t";
+    type_attr.dump();
+
+    auto unit_attr = mlir::UnitAttr::get(context.get());
+    llvm::outs() << "Unit Attribute: \t";
+    unit_attr.dump();
+
+    auto i64_arr_attr = mlir::DenseI64ArrayAttr::get(context.get(), {1, 2, 3});
+    llvm::outs() << "Dense I64 Array Attribute: \t";
+    i64_arr_attr.dump();
+
+    auto dense_attr = mlir::DenseElementsAttr::get(
+        mlir::RankedTensorType::get({2, 2},
+                                    mlir::Float32Type::get(context.get())),
+        llvm::ArrayRef<float>{1, 2, 3, 4});
+    llvm::outs() << "Dense Elements Attribute: \t";
+    dense_attr.dump();
+}
+
 int main() {
     // testDialect();
     // typeBrief();
-    myType();
+    // myType();
+    attrBrief();
     return 0;
 }
