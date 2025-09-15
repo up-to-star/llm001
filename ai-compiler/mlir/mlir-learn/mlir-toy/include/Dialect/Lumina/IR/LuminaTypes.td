@@ -33,7 +33,8 @@ def LuminaTensorType : LuminaType<"LMTensor", "lm_tensor", []> {
         }]>
     ];
 
-    let assemblyFormat = "`<`$shape `,`$elementType`,`$device_id`>`";
+    let hasCustomAssemblyFormat = 1;
+    // let assemblyFormat = "`<`$shape `,`$elementType`,`$device_id`>`";
 
     let skipDefaultBuilders = 0;
 

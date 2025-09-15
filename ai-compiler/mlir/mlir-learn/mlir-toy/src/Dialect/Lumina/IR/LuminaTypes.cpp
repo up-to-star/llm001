@@ -1,11 +1,12 @@
 #include "Dialect/Lumina/IR/LuminaTypes.h"
 
 #include "Dialect/Lumina/IR/LuminaDialect.h"
+#include "llvm/ADT/SmallVector.h"
+#include "llvm/ADT/TypeSwitch.h"
 #include "llvm/Support/LogicalResult.h"
 #include "llvm/Support/raw_ostream.h"
 #include "mlir/IR/BuiltinTypeInterfaces.h"
 #include "mlir/IR/DialectImplementation.h"
-#include "llvm/ADT/TypeSwitch.h"
 
 #define GET_TYPEDEF_CLASSES
 #include "Dialect/Lumina/IR/LuminaTypes.cpp.inc"
@@ -29,5 +30,46 @@ void LuminaDialect::registerType() {
         return emitError() << "elementType must be int or float";
     }
     return ::llvm::success();
+}
+
+Type LMTensorType::parse(::mlir::AsmParser &parser) {
+    if (parser.parseLess()) {
+        return Type();
+    }
+
+    llvm::SmallVector<int64_t, 4> dims;
+    if (parser.parseDimensionList(dims, /*allowDynamic=*/true,
+                                  /*withTrailingX=*/true)) {
+        return Type();
+    }
+    auto typeLoc = parser.getCurrentLocation();
+    Type elementType;
+    if (parser.parseType(elementType)) {
+        return Type();
+    }
+    if (parser.parseComma()) {
+        return Type();
+    }
+    int64_t device_id = 0;
+    if (parser.parseInteger(device_id)) {
+        if (parser.parseGreater()) {
+            return Type();
+        }
+    }
+    return parser.getChecked<LMTensorType>(parser.getContext(), dims,
+                                           elementType, device_id);
+}
+
+void LMTensorType::print(::mlir::AsmPrinter &printer) const {
+    printer << "<";
+    for (int64_t dim : getShape()) {
+        if (dim < 0) {
+            printer << "?" << 'x';
+        } else {
+            printer << dim << 'x';
+        }
+    }
+    printer.printType(getElementType());
+    printer << ", " << getDeviceId() << ">";
 }
 }  // namespace mlir::lumina
