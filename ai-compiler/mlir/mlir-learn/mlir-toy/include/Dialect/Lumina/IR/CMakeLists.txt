@@ -1,4 +1,4 @@
-set(LLVM_TARGET_DEFINITIONS LuminaAttrs.td)
+set(LLVM_TARGET_DEFINITIONS LuminaOps.td)
 
 mlir_tablegen(LuminaDialect.h.inc --gen-dialect-decls -dialect=lumina)
 mlir_tablegen(LuminaDialect.cpp.inc --gen-dialect-defs -dialect=lumina)
@@ -11,5 +11,8 @@ mlir_tablegen(LuminaEnums.cpp.inc -gen-enum-defs -dialect=lumina)
 
 mlir_tablegen(LuminaAttrs.h.inc -gen-attrdef-decls -dialect=lumina)
 mlir_tablegen(LuminaAttrs.cpp.inc -gen-attrdef-defs -dialect=lumina)
+
+mlir_tablegen(LuminaOps.h.inc --gen-op-decls -dialect=lumina)
+mlir_tablegen(LuminaOps.cpp.inc --gen-op-defs -dialect=lumina)
 
 add_public_tablegen_target(LuminaDialectIncGen)

@@ -17,6 +17,7 @@ def LuminaDialect : Dialect {
         static void sayHello();
         void registerType();
         void registerAttrs();
+        void registerOps();
     }];
 
     let hasConstantMaterializer = 0;

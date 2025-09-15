@@ -7,6 +7,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "mlir/IR/BuiltinTypeInterfaces.h"
 #include "mlir/IR/DialectImplementation.h"
+#include <set>
 
 #define GET_TYPEDEF_CLASSES
 #include "Dialect/Lumina/IR/LuminaTypes.cpp.inc"
@@ -72,4 +73,18 @@ void LMTensorType::print(::mlir::AsmPrinter &printer) const {
     printer.printType(getElementType());
     printer << ", " << getDeviceId() << ">";
 }
+
+llvm::LogicalResult LMBufferType::verify(
+    ::llvm::function_ref< ::mlir::InFlightDiagnostic()> emitError,
+    ::llvm::ArrayRef<int64_t> devices) {
+        if (std::set(devices.begin(), devices.end()).size() != devices.size()) {
+            return emitError() << "devices must be unique";
+        }
+        for (auto id : devices) {
+            if (id < 0) {
+                return emitError() << "device_id must be non-negative";
+            }
+        }
+        return ::llvm::success();
+    }
 }  // namespace mlir::lumina
