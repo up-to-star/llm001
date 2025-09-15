@@ -16,6 +16,7 @@ def LuminaDialect : Dialect {
     let extraClassDeclaration = [{
         static void sayHello();
         void registerType();
+        void registerAttrs();
     }];
 
     let hasConstantMaterializer = 0;
@@ -30,7 +31,7 @@ def LuminaDialect : Dialect {
 
     let hasOperationInterfaceFallback = 0;
 
-    let useDefaultAttributePrinterParser = 0;
+    let useDefaultAttributePrinterParser = 1;
 
     let useDefaultTypePrinterParser = 1;
 

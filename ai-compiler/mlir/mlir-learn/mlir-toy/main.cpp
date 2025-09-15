@@ -1,6 +1,8 @@
 #include <memory>
 
+#include "Dialect/Lumina/IR/LuminaAttrs.h"
 #include "Dialect/Lumina/IR/LuminaDialect.h"
+#include "Dialect/Lumina/IR/LuminaEnums.h"
 #include "Dialect/Lumina/IR/LuminaTypes.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/IR/BuiltinAttributes.h"
@@ -172,10 +174,28 @@ void attrBrief() {
     dense_attr.dump();
 }
 
+void testAttr() {
+    mlir::DialectRegistry registry;
+    mlir::MLIRContext context(registry);
+    context.getOrLoadDialect<mlir::lumina::LuminaDialect>();
+    auto nchw = mlir::lumina::Layout::NCHW;
+    llvm::outs() << "NCHW Layout Attribute: "
+                 << mlir::lumina::stringifyEnum(nchw) << "\n";
+
+    auto nhwc = mlir::lumina::Layout::NHWC;
+    llvm::outs() << "NHWC Layout Attribute: "
+                 << mlir::lumina::stringifyEnum(nhwc) << "\n";
+
+    auto dp_attr = mlir::lumina::DataParallelismAttr::get(&context, 2);
+    llvm::outs() << "DataParallelism Attribute: \t";
+    dp_attr.dump();
+}
+
 int main() {
     // testDialect();
     // typeBrief();
     // myType();
-    attrBrief();
+    // attrBrief();
+    testAttr();
     return 0;
 }

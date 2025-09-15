@@ -7,6 +7,7 @@ namespace mlir::lumina {
 void LuminaDialect::initialize() {
     llvm::outs() << "initializeint " << getDialectNamespace() << "\n";
     registerType();
+    registerAttrs();
 }
 
 LuminaDialect::~LuminaDialect() {
