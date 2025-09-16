@@ -10,4 +10,5 @@ add_mlir_dialect_library(MLIRLuminaDialect
     LINK_LIBS PUBLIC
     MLIRIR
     MLIRTensorDialect
+    MLIRDistributeParallelismInterfaces
 )

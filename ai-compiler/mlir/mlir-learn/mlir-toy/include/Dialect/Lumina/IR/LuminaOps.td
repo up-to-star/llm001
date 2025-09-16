@@ -50,7 +50,7 @@ def LuminaConstOp : LuminaOp<"const", []> {
 }
 
 
-def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [DeclareOpInterfaceMethods<SupportDataParallelismOp, ["applyDataParallelism", "supportDataParallelism"]>], (ins I64Attr: $axis)> {
+def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [DeclareOpInterfaceMethods<SupportDataParallelismOp/*["applyDataParallelism", "supportDataParallelism"]>*/>], (ins I64Attr: $axis)> {
     let hasVerifier = 1;
 
     let builders = [

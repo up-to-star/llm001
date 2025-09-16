@@ -1,8 +1,8 @@
-add_mlir_library(MLIRDistributeParallelismOpInterfaces
-    DistributeParallelismOpInterfaces.cpp
+add_mlir_library(MLIRDistributeParallelismInterfaces
+    DistributeParallelismInterfaces.cpp
 
     DEPENDS
-    MLIRDistributeParallelismOpInterfacesIncGen
+    MLIRDistributeParallelismInterfacesIncGen
 
     LINK_LIBS PUBLIC
     MLIRIR

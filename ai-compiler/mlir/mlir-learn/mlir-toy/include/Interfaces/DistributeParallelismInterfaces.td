@@ -48,7 +48,6 @@ def SupportDataParallelismOp : OpInterface<"SupportDataParallelismOp"> {
             /*args=*/ (ins "::mlir::DistributeParallelAttr":$attr),
             /*methodBody=*/ "",
             /*defaultImpl=*/ [{
-                llvm::outs() << "a\n";
                 return llvm::failure();
             }]
         >,
@@ -75,7 +74,7 @@ def SupportDataParallelismOp : OpInterface<"SupportDataParallelismOp"> {
                 }
                 return true;
             }]
-        >,
+        >
     ];
 
     let extraClassDeclaration = "";
