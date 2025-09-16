@@ -1,5 +1,7 @@
 #include "Dialect/Lumina/IR/LuminaTypes.h"
 
+#include <set>
+
 #include "Dialect/Lumina/IR/LuminaDialect.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/TypeSwitch.h"
@@ -7,7 +9,6 @@
 #include "llvm/Support/raw_ostream.h"
 #include "mlir/IR/BuiltinTypeInterfaces.h"
 #include "mlir/IR/DialectImplementation.h"
-#include <set>
 
 #define GET_TYPEDEF_CLASSES
 #include "Dialect/Lumina/IR/LuminaTypes.cpp.inc"
@@ -22,7 +23,7 @@ void LuminaDialect::registerType() {
 }
 
 ::llvm::LogicalResult LMTensorType::verify(
-    ::llvm::function_ref< ::mlir::InFlightDiagnostic()> emitError,
+    ::llvm::function_ref<::mlir::InFlightDiagnostic()> emitError,
     ::llvm::ArrayRef<int64_t> shape, Type elementType, int64_t device_id) {
     if (device_id < 0) {
         return emitError() << "device_id must be non-negative";
@@ -75,16 +76,25 @@ void LMTensorType::print(::mlir::AsmPrinter &printer) const {
 }
 
 llvm::LogicalResult LMBufferType::verify(
-    ::llvm::function_ref< ::mlir::InFlightDiagnostic()> emitError,
+    ::llvm::function_ref<::mlir::InFlightDiagnostic()> emitError,
     ::llvm::ArrayRef<int64_t> devices) {
-        if (std::set(devices.begin(), devices.end()).size() != devices.size()) {
-            return emitError() << "devices must be unique";
-        }
-        for (auto id : devices) {
-            if (id < 0) {
-                return emitError() << "device_id must be non-negative";
-            }
-        }
-        return ::llvm::success();
+    if (std::set(devices.begin(), devices.end()).size() != devices.size()) {
+        return emitError() << "devices must be unique";
     }
+    for (auto id : devices) {
+        if (id < 0) {
+            return emitError() << "device_id must be non-negative";
+        }
+    }
+    return ::llvm::success();
+}
+
+mlir::ShapedType LMTensorType::cloneWith(
+    std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type type) {
+    if (shape) {
+        return get(getContext(), *shape, type, getDeviceId());
+    }
+    return get(getContext(), getShape(), type, getDeviceId());
+}
+
 }  // namespace mlir::lumina

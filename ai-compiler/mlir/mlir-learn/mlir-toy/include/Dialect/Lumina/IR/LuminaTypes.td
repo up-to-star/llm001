@@ -10,7 +10,7 @@ class LuminaType<string name, string typeMnemonic, list<Trait> traits = [], stri
     let typeName = dialect.name # "." # typeMnemonic;
 }
 
-def LuminaTensorType : LuminaType<"LMTensor", "lm_tensor", []> {
+def LuminaTensorType : LuminaType<"LMTensor", "lm_tensor", [ShapedTypeInterface], "::mlir::TensorType"> {
     let summary = "Lumina tensor type";
 
     let description = "Lumina tensor type";
@@ -32,6 +32,10 @@ def LuminaTensorType : LuminaType<"LMTensor", "lm_tensor", []> {
             return $_get(elementType.getContext(), shape, elementType, 0);
         }]>
     ];
+
+    let extraClassDeclaration = [{
+        mlir::ShapedType cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type type);
+    }];
 
     let hasCustomAssemblyFormat = 1;
     // let assemblyFormat = "`<`$shape `,`$elementType`,`$device_id`>`";

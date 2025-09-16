@@ -22,4 +22,6 @@ void LuminaDialect::registerAttrs() {
 }
 
 bool LayoutAttr::isChannelLast() { return getValue() == Layout::NHWC; }
+
+
 }  // namespace mlir::lumina

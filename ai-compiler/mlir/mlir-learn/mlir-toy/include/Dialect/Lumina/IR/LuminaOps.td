@@ -9,7 +9,7 @@ class LuminaOp<string mnemonic, list<Trait> traits = []>
 }
 
 class LuminaUnaryOp<string mnemonic, Type OperandType, Type resultType = OperandType, list<Trait> traits = [], dag attributes = (ins)>
-    : LuminaOp<mnemonic, traits#[]> {
+    : LuminaOp<mnemonic, [DeclareOpInterfaceMethods<DistributeParallelOp>] # traits> {
     let arguments = !con((ins
         OperandType: $input),
         attributes
@@ -21,7 +21,7 @@ class LuminaUnaryOp<string mnemonic, Type OperandType, Type resultType = Operand
 }
 
 class LuminaBinaryOp<string mnemonic, Type OperandType, Type resultType = OperandType, list<Trait> traits = [], dag attributes = (ins)>
-    : LuminaOp<mnemonic, traits#[]> {
+    : LuminaOp<mnemonic, [DeclareOpInterfaceMethods<DistributeParallelOp>] # traits> {
     let arguments = !con((ins
         OperandType: $lhs,
         OperandType: $rhs),
@@ -32,6 +32,12 @@ class LuminaBinaryOp<string mnemonic, Type OperandType, Type resultType = Operan
         resultType: $result
     );
 }
+
+class LuminaElewiseUnaryOp<string mnemonic, Type OperandType, Type resultType = OperandType, list<Trait> traits = [], dag attributes = (ins)>
+    : LuminaUnaryOp<mnemonic, OperandType, resultType, [DeclareOpInterfaceMethods<SupportDataParallelismOp>] # traits, attributes>;
+
+class LuminaElewiseBinaryOp<string mnemonic, Type OperandType, Type resultType = OperandType, list<Trait> traits = [], dag attributes = (ins)>
+    : LuminaBinaryOp<mnemonic, OperandType, resultType, [DeclareOpInterfaceMethods<SupportDataParallelismOp>] # traits, attributes>;
 
 def LuminaConstOp : LuminaOp<"const", []> {
     let arguments = (ins
@@ -44,7 +50,7 @@ def LuminaConstOp : LuminaOp<"const", []> {
 }
 
 
-def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [], (ins I64Attr: $axis)> {
+def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [DeclareOpInterfaceMethods<SupportDataParallelismOp, ["applyDataParallelism", "supportDataParallelism"]>], (ins I64Attr: $axis)> {
     let hasVerifier = 1;
 
     let builders = [
@@ -57,7 +63,7 @@ def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [], (in
 }
 
 
-def LuminaExpOp : LuminaUnaryOp<"exp", AnyLMTensor, AnyLMTensor, [], (ins)> {
+def LuminaExpOp : LuminaElewiseUnaryOp<"exp", AnyLMTensor, AnyLMTensor, [], (ins)> {
 
     let builders = [
         OpBuilder<(ins "::mlir::Value": $input), [{
@@ -67,10 +73,10 @@ def LuminaExpOp : LuminaUnaryOp<"exp", AnyLMTensor, AnyLMTensor, [], (ins)> {
     ];
 }
 
-def LuminaAddOp : LuminaBinaryOp<"add", AnyLMTensor, AnyLMTensor, [], (ins)>;
-def LuminaSubOp : LuminaBinaryOp<"sub", AnyLMTensor, AnyLMTensor, [], (ins)>;
-def LuminaMulOp : LuminaBinaryOp<"mul", AnyLMTensor, AnyLMTensor, [], (ins)>;
-def LuminaDivOp : LuminaBinaryOp<"div", AnyLMTensor, AnyLMTensor, [], (ins)>;
+def LuminaAddOp : LuminaElewiseBinaryOp<"add", AnyLMTensor, AnyLMTensor, [], (ins)>;
+def LuminaSubOp : LuminaElewiseBinaryOp<"sub", AnyLMTensor, AnyLMTensor, [], (ins)>;
+def LuminaMulOp : LuminaElewiseBinaryOp<"mul", AnyLMTensor, AnyLMTensor, [], (ins)>;
+def LuminaDivOp : LuminaElewiseBinaryOp<"div", AnyLMTensor, AnyLMTensor, [], (ins)>;
 
 def LuminaAllToAllOp : LuminaOp<"all_to_all", []> {
     let arguments = (ins

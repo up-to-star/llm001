@@ -5,9 +5,11 @@
 #include "Dialect/Lumina/IR/LuminaEnums.h"
 #include "Dialect/Lumina/IR/LuminaOps.h"
 #include "Dialect/Lumina/IR/LuminaTypes.h"
+#include "Interfaces/DistributeParallelismInterfaces.h"
 #include "llvm/ADT/APFloat.h"
 #include "mlir/Dialect/GPU/IR/GPUDialect.h"
 #include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/BuiltinTypeInterfaces.h"
 #include "mlir/IR/BuiltinTypes.h"
 #include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
@@ -256,22 +258,59 @@ void testOp() {
     get_tensor_op_2->dump();
 
     // Softmax op
-    auto softmax_op = builder.create<mlir::lumina::LuminaSoftmaxOp>(
-        loc, get_tensor_op_1, 1);
+    auto softmax_op =
+        builder.create<mlir::lumina::LuminaSoftmaxOp>(loc, get_tensor_op_1, 1);
     llvm::outs() << "Softmax Op: \n";
     softmax_op->dump();
 
     // Exp Op
-    auto exp_op = builder.create<mlir::lumina::LuminaExpOp>(loc, get_tensor_op_2);
+    auto exp_op =
+        builder.create<mlir::lumina::LuminaExpOp>(loc, get_tensor_op_2);
     llvm::outs() << "Exp Op: \n";
     exp_op->dump();
 
     // all to all Op
     auto out_buffer_op = builder.create<mlir::lumina::LuminaBufferOp>(
         loc, mlir::ValueRange{const_2, const_4});
-    auto all_to_all_op = builder.create<mlir::lumina::LuminaAllToAllOp>(loc, buffer_op, out_buffer_op);
+    auto all_to_all_op = builder.create<mlir::lumina::LuminaAllToAllOp>(
+        loc, buffer_op, out_buffer_op);
     llvm::outs() << "AllToAll Op: \n";
     all_to_all_op->dump();
+}
+
+void testInterface() {
+    mlir::DialectRegistry registry;
+    mlir::MLIRContext context(registry);
+    context.getOrLoadDialect<mlir::lumina::LuminaDialect>();
+
+    auto f32 = mlir::Float32Type::get(&context);
+    auto dim = mlir::ShapedType::kDynamic;
+    auto shape = mlir::SmallVector<int64_t>{dim, dim, 64};
+    auto tensor_type = mlir::lumina::LMTensorType::get(&context, shape, f32, 0);
+    tensor_type.dump();
+
+    auto shaped_type = mlir::dyn_cast_or_null<mlir::ShapedType>(tensor_type);
+    if (shaped_type) {
+        llvm::outs() << "Shaped Type: \n";
+        shaped_type.dump();
+    }
+    auto clone_type = shaped_type.clone(f32);
+    llvm::outs() << "Clone Type: \n";
+    clone_type.dump();
+
+    auto dp_attr = mlir::lumina::DataParallelismAttr::get(&context, 2);
+    llvm::outs()
+        << dp_attr.getAbstractAttribute().getName()
+        << " has DistributeParallelAttr: "
+        << dp_attr
+               .hasPromiseOrImplementsInterface<mlir::DistributeParallelAttr>()
+        << "\n";
+
+    llvm::outs() << dp_attr.getAbstractAttribute().getName()
+                 << " has DataParallelAttr: "
+                 << dp_attr.getAbstractAttribute().hasInterface(
+                        mlir::DataParallelAttr::getInterfaceID())
+                 << "\n";
 }
 
 int main() {
@@ -280,6 +319,7 @@ int main() {
     // myType();
     // attrBrief();
     // testAttr();
-    testOp();
+    // testOp();
+    testInterface();
     return 0;
 }
