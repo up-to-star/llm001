@@ -35,6 +35,20 @@ def LuminaTensorType : LuminaType<"LMTensor", "lm_tensor", [ShapedTypeInterface]
 
     let extraClassDeclaration = [{
         mlir::ShapedType cloneWith(std::optional<llvm::ArrayRef<int64_t>> shape, mlir::Type type);
+        using ::mlir::ShapedType::Trait<LMTensorType>::getElementTypeBitWidth;
+        using ::mlir::ShapedType::Trait<LMTensorType>::getRank;
+        using ::mlir::ShapedType::Trait<LMTensorType>::getNumElements;
+        using ::mlir::ShapedType::Trait<LMTensorType>::isDynamicDim;
+        using ::mlir::ShapedType::Trait<LMTensorType>::hasStaticShape;
+        using ::mlir::ShapedType::Trait<LMTensorType>::getNumDynamicDims;
+        using ::mlir::ShapedType::Trait<LMTensorType>::getDimSize;
+        using ::mlir::ShapedType::Trait<LMTensorType>::getDynamicDimIndex;
+
+        LMTensorType clone(::mlir::ArrayRef<int64_t> shape, int64_t device_id) const;
+        LMTensorType clone(::mlir::ArrayRef<int64_t> shape, ::mlir::Type elementType) const;
+        LMTensorType clone(::mlir::ArrayRef<int64_t> shape) const;
+        LMTensorType clone(::mlir::Type elementType) const;
+        LMTensorType clone() const;
     }];
 
     let hasCustomAssemblyFormat = 1;

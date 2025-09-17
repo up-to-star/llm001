@@ -6,3 +6,5 @@ def AnyLMTensor : Type<And<[CPred<"::mlir::isa<::mlir::lumina::LMTensorType>($_s
 
 def AnyLMBuffer : Type<And<[CPred<"::mlir::isa<::mlir::lumina::LMBufferType>($_self)">, 
                             CPred<"::mlir::cast<::mlir::lumina::LMBufferType>($_self).getDevices().size() > 0">]>>;
+
+def LMTensorOrBuffer : AnyTypeOf<[AnyLMTensor, AnyLMBuffer]>;

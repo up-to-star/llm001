@@ -50,7 +50,7 @@ def LuminaConstOp : LuminaOp<"const", []> {
 }
 
 
-def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [DeclareOpInterfaceMethods<SupportDataParallelismOp/*["applyDataParallelism", "supportDataParallelism"]>*/>], (ins I64Attr: $axis)> {
+def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [DeclareOpInterfaceMethods<SupportDataParallelismOp, ["applyDataParallelism", "supportDataParallelism"]>], (ins I64Attr: $axis)> {
     let hasVerifier = 1;
 
     let builders = [
@@ -127,4 +127,19 @@ def LuminaPrintOp : LuminaOp<"print", []> {
     let arguments = (ins
         AnyType: $input
     );
+}
+
+def LuminaBufferCastOp : LuminaOp<"buffer_cast", []> {
+    let description = "对数据切分的标记";
+
+    let arguments = (ins
+        Variadic<LMTensorOrBuffer>: $inputs,
+        DistributeParallelAttr: $distribute_attr
+    );
+
+    let results = (outs
+        Variadic<LMTensorOrBuffer>: $outputs
+    );
+
+    let hasVerifier = 1;
 }
