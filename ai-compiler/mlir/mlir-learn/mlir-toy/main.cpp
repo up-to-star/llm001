@@ -6,6 +6,8 @@
 #include "Dialect/Lumina/IR/LuminaEnums.h"
 #include "Dialect/Lumina/IR/LuminaOps.h"
 #include "Dialect/Lumina/IR/LuminaTypes.h"
+#include "Dialect/Lumina/Transforms/Passes.h"
+#include "Dialect/Lumina/Transforms/Passes.h"
 #include "Interfaces/DistributeParallelismInterfaces.h"
 #include "Utils/File.h"
 #include "llvm/ADT/APFloat.h"
@@ -17,12 +19,16 @@
 #include "mlir/IR/DialectRegistry.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/ValueRange.h"
+#include "mlir/Pass/PassRegistry.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
 #include "mlir/Dialect/Arith/IR/Arith.h"
 #include "mlir/Dialect/Affine/IR/AffineOps.h"
 #include "mlir/Dialect/Linalg/IR/Linalg.h"
 #include "mlir/Dialect/SCF/IR/SCF.h"
+#include "Utils/Key.h"
+#include "mlir/Pass/PassManager.h"
+#include "mlir/Support/LLVM.h"
 
 void testDialect() {
     mlir::DialectRegistry registry;
@@ -362,6 +368,60 @@ void testIRStruct() {
     }
 }
 
+mlir::ModuleOp getModule(mlir::OpBuilder& builder) {
+    auto loc = builder.getUnknownLoc();
+    auto context = builder.getContext();
+    auto module = builder.create<mlir::ModuleOp>(loc, "Lumina");
+    builder.setInsertionPointToStart(module.getBody());
+    auto f32 = mlir::Float32Type::get(context);
+    auto dy_dim = 128;
+    auto dy_shape = mlir::SmallVector<int64_t>({dy_dim, dy_dim, 24});
+    auto dy_tensor_type =
+        mlir::lumina::LMTensorType::get(context, dy_shape, f32, 0);
+    auto func_type =
+        mlir::FunctionType::get(context, {dy_tensor_type}, {dy_tensor_type});
+    auto func =
+        builder.create<mlir::func::FuncOp>(loc, KEntryPointName, func_type);
+    func->setAttr(KHostFunc, builder.getUnitAttr());
+    func->setAttr(KDPAttrName,
+                  mlir::lumina::DataParallelismAttr::get(context, 2));
+
+    auto block = func.addEntryBlock();
+    builder.setInsertionPointToStart(block);
+    // Softmax Op
+    mlir::Value softmax_op = builder.create<mlir::lumina::LuminaSoftmaxOp>(
+        loc, block->getArgument(0), 1);
+    softmax_op =
+        builder.create<mlir::lumina::LuminaSoftmaxOp>(loc, softmax_op, 1);
+    builder.create<mlir::func::ReturnOp>(loc, mlir::ValueRange{softmax_op});
+    return module;
+}
+
+void testPass() {
+    mlir::DialectRegistry registry;
+    mlir::MLIRContext context(registry);
+
+    context.getOrLoadDialect<mlir::lumina::LuminaDialect>();
+    context.getOrLoadDialect<mlir::func::FuncDialect>();
+
+    mlir::OpBuilder builder(&context);
+    auto loc = builder.getUnknownLoc();
+    auto module = getModule(builder);
+    mlir::PassManager pm(&context);
+    mlir::lumina::MarkDistributeParallelParameterOptions
+        mark_distribute_parallel_option{.DPNums = 3, .TPNums = 1};
+    pm.addPass(mlir::lumina::createMarkDistributeParallelParameter(
+        mark_distribute_parallel_option));
+    pm.addNestedPass<mlir::func::FuncOp>(
+        mlir::lumina::createApplyDistributeTransformPass());
+    module->dump();
+    if (pm.run(module).failed()) {
+        llvm::outs() << "Pass run failed\n";
+    }
+    llvm::outs() << "after pass: \n";
+    module->dump();
+}
+
 int main() {
     // testDialect();
     // typeBrief();
@@ -370,6 +430,7 @@ int main() {
     // testAttr();
     // testOp();
     // testInterface();
-    testIRStruct();
+    // testIRStruct();
+    testPass();
     return 0;
 }

@@ -39,6 +39,7 @@ add_subdirectory(src)
 
 target_link_libraries(mlir-toy PRIVATE
     MLIRLuminaDialect
+    MLIRLuminaTransforms
     MLIRUtils
     MLIRIR
     MLIRParser
@@ -47,4 +48,5 @@ target_link_libraries(mlir-toy PRIVATE
     MLIRGPUDialect
     MLIRLinalgDialect
     MLIRSCFDialect
+    MLIRPass
 )
