@@ -56,7 +56,7 @@ def LuminaSoftmaxOp : LuminaUnaryOp<"softmax", AnyLMTensor, AnyLMTensor, [Declar
     let builders = [
         OpBuilder<(ins "::mlir::Value": $input, "int64_t": $axis), [{
             $_state.addOperands(input);
-            $_state.getOrAddProperties<Properties>().axis = $_builder.getIntegerAttr(odsBuilder.getIntegerType(64, true), axis);
+            $_state.getOrAddProperties<Properties>().axis = $_builder.getI64IntegerAttr(axis);
             $_state.addTypes(input.getType());
             }]>
     ];

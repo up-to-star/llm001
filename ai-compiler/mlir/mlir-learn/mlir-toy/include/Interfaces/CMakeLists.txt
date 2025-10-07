@@ -7,3 +7,8 @@ mlir_tablegen(DistributeParallelismAttrInterfaces.h.inc -gen-attr-interface-decl
 mlir_tablegen(DistributeParallelismAttrInterfaces.cpp.inc -gen-attr-interface-defs)
 
 add_public_tablegen_target(MLIRDistributeParallelismInterfacesIncGen)
+
+set(LLVM_TARGET_DEFINITIONS FusionRegionInterfaces.td)
+mlir_tablegen(FusionRegionInterfaces.h.inc -gen-op-interface-decls)
+mlir_tablegen(FusionRegionInterfaces.cpp.inc -gen-op-interface-defs)
+add_public_tablegen_target(MLIRFusionRegionInterfacesIncGen)

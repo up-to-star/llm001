@@ -414,6 +414,8 @@ void testPass() {
         mark_distribute_parallel_option));
     pm.addNestedPass<mlir::func::FuncOp>(
         mlir::lumina::createApplyDistributeTransformPass());
+    pm.addNestedPass<mlir::func::FuncOp>(
+        mlir::lumina::createDeviceRegionFusionPass());
     module->dump();
     if (pm.run(module).failed()) {
         llvm::outs() << "Pass run failed\n";
