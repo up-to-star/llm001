@@ -169,36 +169,36 @@ void FusionOps(::mlir::RewriterBase &rewriter,
 }
 
 struct BufferCastOpDeviceRegionFusion
-    : public OpRewritePattern<mlir::lumina::LuminaBufferCastOp> {
-    using OpRewritePattern::OpRewritePattern;
+    : public OpRewritePattern<::mlir::lumina::LuminaBufferCastOp> {
+  using OpRewritePattern::OpRewritePattern;
 
-    virtual LogicalResult matchAndRewrite(::mlir::lumina::LuminaBufferCastOp op,
-                                          PatternRewriter &rewriter) const {
-        llvm::outs() << "match: " << getDebugName() << "\n";
-        auto loc = op.getLoc();
-        llvm::SmallVector<llvm::SetVector<Operation *>> op_list;
-        for (auto res : op.getResults()) {
-            rewriter.setInsertionPointAfterValue(res);
-            llvm::SetVector<Operation *> ops;
-            for (auto use : res.getUsers()) {
-                addops(ops, use);
-            }
-            if (ops.size() != 0) op_list.push_back(ops);
-        }
-        if (op_list.size() == 0) return llvm::failure();
-        for (auto ops : op_list) {
-            FusionOps(rewriter, ops.takeVector(), loc);
-        }
-        return llvm::success();
+  virtual LogicalResult matchAndRewrite(::mlir::lumina::LuminaBufferCastOp op,
+                                        PatternRewriter& rewriter) const {
+    llvm::outs() << "match:" << getDebugName() << "\n";
+    auto loc = op->getLoc();
+    llvm::SmallVector<llvm::SetVector<Operation*>> op_list;
+    for (auto res : op->getResults()) {
+      rewriter.setInsertionPointAfterValue(res);
+      llvm::SetVector<Operation*> ops;
+      for (auto use : res.getUsers()) {
+        addops(ops, use);
+      }
+      if (ops.size() != 0) op_list.push_back(ops);
     }
+    if (op_list.size() == 0) return llvm::failure();
+    for (auto ops : op_list) {
+      FusionOps(rewriter, ops.takeVector(), loc);
+    }
+    return llvm::success();
+  }
 
-    void addops(llvm::SetVector<Operation *> &ops, Operation *op) const {
-        if (!isa<DistributeParallelOp>(op)) return;
-        ops.insert(op);
-        for (auto user : op->getUsers()) {
-            addops(ops, user);
-        }
+  void addops(llvm::SetVector<Operation*>& ops, Operation* op) const {
+    if (!isa<DistributeParallelOp>(op)) return;
+    ops.insert(op);
+    for (auto user : op->getUsers()) {
+      addops(ops, user);
     }
+  }
 };
 
 struct BufferCastOpFold
@@ -206,8 +206,8 @@ struct BufferCastOpFold
     using OpRewritePattern::OpRewritePattern;
 
     LogicalResult matchAndRewrite(::mlir::lumina::LuminaBufferCastOp op,
-                                 PatternRewriter &rewriter) const override {
-        // 原有的match逻辑
+                                  PatternRewriter &rewriter) const override {
+        llvm::outs() << "match:" << getDebugName() << "\n";
         Operation *above_cast = nullptr;
         for (auto [index, operand] : llvm::enumerate(op->getOperands())) {
             if (isa<BlockArgument>(operand)) return llvm::failure();
@@ -225,15 +225,13 @@ struct BufferCastOpFold
                 return llvm::failure();
             }
         }
-        
-        // 原有的rewrite逻辑
+
         for (auto [index, res] : llvm::enumerate(op->getResults())) {
             rewriter.replaceAllUsesWith(res, above_cast->getOperand(index));
         }
         rewriter.eraseOp(op);
         rewriter.eraseOp(above_cast);
-        llvm::outs() << "match:" << getDebugName() << "\n";
-        
+
         return llvm::success();
     }
 };

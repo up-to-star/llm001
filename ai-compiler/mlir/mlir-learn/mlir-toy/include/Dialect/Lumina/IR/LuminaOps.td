@@ -1,5 +1,11 @@
 include "Dialect/Lumina/IR/LuminaAttrs.td"
 include "Dialect/Lumina/IR/LuminaConstraints.td"
+include "Interfaces/FusionRegionInterfaces.td"
+include "mlir/Interfaces/FunctionInterfaces.td"
+include "mlir/Interfaces/SideEffectInterfaces.td"
+include "mlir/IR/OpAsmInterface.td"
+include "mlir/Interfaces/CallInterfaces.td"
+include "mlir/Interfaces/ControlFlowInterfaces.td"
 
 class LuminaOp<string mnemonic, list<Trait> traits = []>
     : Op<LuminaDialect, mnemonic, traits> {
@@ -140,6 +146,22 @@ def LuminaBufferCastOp : LuminaOp<"buffer_cast", []> {
     let results = (outs
         Variadic<LMTensorOrBuffer>: $outputs
     );
+
+    let hasVerifier = 1;
+}
+
+def LuminaDeviceKernelOp: LuminaOp<"device_region",[
+        DeclareOpInterfaceMethods<FusionRegionOpInterface,["FusionOps"]>,AffineScope, AutomaticAllocationScope,IsolatedFromAbove, OpAsmOpInterface]>{
+    let arguments = (ins
+        SymbolNameAttr:$sym_name,
+        I64Attr:$device_id,
+        Variadic<AnyType>:$args
+    );
+
+    let regions = (region SizedRegion<1>:$region);
+
+    let results = (outs
+        Variadic<AnyType>:$result);
 
     let hasVerifier = 1;
 }

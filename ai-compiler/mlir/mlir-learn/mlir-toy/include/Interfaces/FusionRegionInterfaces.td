@@ -3,7 +3,7 @@ include "mlir/IR/RegionKindInterface.td"
 include "mlir/IR/SymbolInterfaces.td"
 
 
-def FusionRegionOpInterface : OpInterface<"FusionRegionOpInterfaces", []> {
+def FusionRegionOpInterface : OpInterface<"FusionRegionOpInterface", []> {
     let description = "将多个Op合并到一个Region上的泛化接口";
 
     let cppNamespace = "::mlir";
