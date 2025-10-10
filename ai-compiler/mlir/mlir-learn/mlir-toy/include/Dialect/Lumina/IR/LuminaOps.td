@@ -165,3 +165,16 @@ def LuminaDeviceKernelOp: LuminaOp<"device_region",[
 
     let hasVerifier = 1;
 }
+
+def LuminaReturnOp : LuminaOp<"return", [Pure, HasParent<"LuminaDeviceKernelOp">, ReturnLike, Terminator]> {
+  let summary = "return operation";
+
+  let arguments = (ins Variadic<AnyType>:$operands);
+
+  let builders = [OpBuilder<(ins), [{
+    build($_builder, $_state, std::nullopt);
+  }]>];
+
+  let assemblyFormat = "attr-dict ($operands^ `:` type($operands))?";
+  let hasVerifier = 0;
+}

@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "Dialect/Lumina/IR/LuminaDialect.h"
 #include "Dialect/Lumina/IR/LuminaAttrs.h"
 #include "Dialect/Lumina/IR/LuminaOps.h"
@@ -15,6 +17,8 @@
 #include "llvm/Support/LogicalResult.h"
 #include "llvm/Support/Error.h"
 #include "llvm/Support/ScopedPrinter.h"
+#include "llvm/Support/FormatVariadic.h"
+#include "llvm/Support/Debug.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/SetVector.h"
 #include "llvm/ADT/StringRef.h"
@@ -31,6 +35,8 @@
 #include "mlir/Rewrite/FrozenRewritePatternSet.h"
 #include "mlir/Support/LLVM.h"
 #include "mlir/Transforms/GreedyPatternRewriteDriver.h"
+
+#define DEBUG_TYPE "device-region-fusion"
 
 namespace mlir::lumina {
 #define GEN_PASS_DEF_DEVICEREGIONFUSIONPASS
@@ -108,97 +114,100 @@ getFusionInputs(mlir::ArrayRef<::mlir::Operation *> ops) {
 
 }  // namespace
 
-void FusionOps(::mlir::RewriterBase &rewriter,
-               mlir::ArrayRef<::mlir::Operation *> ops, ::mlir::Location loc) {
-    if (ops.size() == 0) return;
-    auto context = rewriter.getContext();
-    auto insert_point = rewriter.saveInsertionPoint();
-    auto name = getFusionName(ops);
-    auto device_id = getDeviceid(ops);
-    name.append(llvm::to_string(device_id));
-    auto inputs_map = getFusionInputs(ops);
-    auto outputs_map = getFusionOutputs(ops);
-    llvm::SmallVector<Value> inputs_val;
-    llvm::SmallVector<Value> output_val;
-    llvm::SmallVector<Type> outputs_type;
-    llvm::SmallVector<Type> inputs_type;
-    for (auto [key, val] : inputs_map) {
-        inputs_val.push_back(key);
-        inputs_type.push_back(key.getType());
+void FusionOps(::mlir::RewriterBase& rewriter,
+               mlir::ArrayRef<::mlir::Operation*> ops, ::mlir::Location loc) {
+  if (ops.size() == 0) return;
+  auto context = rewriter.getContext();
+  auto insert_point = rewriter.saveInsertionPoint();
+  auto name = getFusionName(ops);
+  auto device_id = getDeviceid(ops);
+  name.append(llvm::to_string(device_id));
+  auto inputs_map = getFusionInputs(ops);
+  auto outputs_map = getFusionOutputs(ops);
+  llvm::SmallVector<Value> inputs_val;
+  llvm::SmallVector<Value> output_val;
+  llvm::SmallVector<Type> outputs_type;
+  llvm::SmallVector<Type> inputs_type;
+  for (auto [key, val] : inputs_map) {
+    inputs_val.push_back(key);
+    inputs_type.push_back(key.getType());
+  }
+  for (auto [key, val] : outputs_map) {
+    outputs_type.push_back(key.getType());
+  }
+  rewriter.setInsertionPoint((*ops.begin())->getParentOp());
+  auto kernel = rewriter.create<func::FuncOp>(
+      loc, name, FunctionType::get(context, inputs_type, outputs_type));
+  kernel->setAttr(KDeviceFunc, UnitAttr::get(context));
+  auto block = kernel.addEntryBlock();
+  std::map<Operation*, Operation*> op_map;
+  for (auto op : ops) {
+    auto clone_op = op->clone();
+    block->push_back(clone_op);
+    op_map[op] = clone_op;
+    for (auto [index, operand] : llvm::enumerate(op->getOperands())) {
+      if (isa<BlockArgument>(operand)) continue;
+      if (op_map.contains(operand.getDefiningOp())) {
+        op_map[op]->setOperand(
+            index,
+            op_map[operand.getDefiningOp()]->getResult(
+                llvm::cast_or_null<OpResult>(operand).getResultNumber()));
+      }
     }
-    for (auto [key, val] : outputs_map) {
-        outputs_type.push_back(key.getType());
-    }
-    rewriter.setInsertionPoint((*ops.begin())->getParentOp());
-    auto kernel = rewriter.create<func::FuncOp>(
-        loc, name, FunctionType::get(context, inputs_type, outputs_type));
-    kernel->setAttr(KDeviceFunc, UnitAttr::get(context));
-    auto block = kernel.addEntryBlock();
-    std::map<Operation *, Operation *> op_map;
-    for (auto op : ops) {
-        auto clone_op = op->clone();
-        block->push_back(clone_op);
-        op_map[op] = clone_op;
-        for (auto [index, operand] : llvm::enumerate(op->getOperands())) {
-            if (isa<BlockArgument>(operand)) continue;
-            if (op_map.contains(operand.getDefiningOp())) {
-                op_map[op]->setOperand(
-                    index, op_map[operand.getDefiningOp()]->getResult(
-                               llvm::cast_or_null<OpResult>(operand)
-                                   .getResultNumber()));
-            }
-        }
-    }
-    for (auto [key, val] : outputs_map) {
-        output_val.push_back(op_map[val.first]->getResult(val.second));
-    }
-    for (auto [index, key] : llvm::enumerate(inputs_map)) {
-        op_map[key.second.first]->setOperand(key.second.second,
-                                             block->getArgument(index));
-    }
+  }
+  for (auto [key, val] : outputs_map) {
+    output_val.push_back(op_map[val.first]->getResult(val.second));
+  }
+  for (auto [index, key] : llvm::enumerate(inputs_map)) {
+    op_map[key.second.first]->setOperand(key.second.second,
+                                         block->getArgument(index));
+  }
 
-    rewriter.setInsertionPointToEnd(block);
-    rewriter.create<func::ReturnOp>(loc, output_val);
-    rewriter.setInsertionPoint(insert_point.getBlock(),
-                               insert_point.getPoint());
-    auto call = rewriter.create<func::CallOp>(loc, kernel, inputs_val);
-    for (auto [index, key] : llvm::enumerate(outputs_map)) {
-        rewriter.replaceAllUsesWith(key.first, call->getResult(index));
-    }
-    return;
+  rewriter.setInsertionPointToEnd(block);
+  rewriter.create<func::ReturnOp>(loc, output_val);
+  rewriter.setInsertionPoint(insert_point.getBlock(), insert_point.getPoint());
+  auto call = rewriter.create<func::CallOp>(loc, kernel, inputs_val);
+  for (auto [index, key] : llvm::enumerate(outputs_map)) {
+    rewriter.replaceAllUsesWith(key.first, call->getResult(index));
+  }
+  return;
 }
 
 struct BufferCastOpDeviceRegionFusion
     : public OpRewritePattern<::mlir::lumina::LuminaBufferCastOp> {
-  using OpRewritePattern::OpRewritePattern;
+    using OpRewritePattern::OpRewritePattern;
 
-  virtual LogicalResult matchAndRewrite(::mlir::lumina::LuminaBufferCastOp op,
-                                        PatternRewriter& rewriter) const {
-    llvm::outs() << "match:" << getDebugName() << "\n";
-    auto loc = op->getLoc();
-    llvm::SmallVector<llvm::SetVector<Operation*>> op_list;
-    for (auto res : op->getResults()) {
-      rewriter.setInsertionPointAfterValue(res);
-      llvm::SetVector<Operation*> ops;
-      for (auto use : res.getUsers()) {
-        addops(ops, use);
-      }
-      if (ops.size() != 0) op_list.push_back(ops);
+    virtual LogicalResult matchAndRewrite(::mlir::lumina::LuminaBufferCastOp op,
+                                          PatternRewriter &rewriter) const {
+        auto loc = op->getLoc();
+        llvm::SmallVector<llvm::SetVector<Operation *>> op_list;
+        for (auto res : op->getResults()) {
+            rewriter.setInsertionPointAfterValue(res);
+            llvm::SetVector<Operation *> ops;
+            for (auto use : res.getUsers()) {
+                addops(ops, use);
+            }
+            if (ops.size() != 0) op_list.push_back(ops);
+        }
+        if (op_list.size() == 0) return llvm::failure();
+        for (auto ops : op_list) {
+            if (!LuminaDeviceKernelOp::FusionOps(rewriter, ops.takeVector(),
+                                                 loc)
+                     .succeeded()) {
+                LLVM_DEBUG(llvm::dbgs() << llvm::formatv("fusion error!"));
+                return llvm::failure();
+            }
+        }
+        return llvm::success();
     }
-    if (op_list.size() == 0) return llvm::failure();
-    for (auto ops : op_list) {
-      FusionOps(rewriter, ops.takeVector(), loc);
-    }
-    return llvm::success();
-  }
 
-  void addops(llvm::SetVector<Operation*>& ops, Operation* op) const {
-    if (!isa<DistributeParallelOp>(op)) return;
-    ops.insert(op);
-    for (auto user : op->getUsers()) {
-      addops(ops, user);
+    void addops(llvm::SetVector<Operation *> &ops, Operation *op) const {
+        if (!isa<DistributeParallelOp>(op)) return;
+        ops.insert(op);
+        for (auto user : op->getUsers()) {
+            addops(ops, user);
+        }
     }
-  }
 };
 
 struct BufferCastOpFold
@@ -207,7 +216,6 @@ struct BufferCastOpFold
 
     LogicalResult matchAndRewrite(::mlir::lumina::LuminaBufferCastOp op,
                                   PatternRewriter &rewriter) const override {
-        llvm::outs() << "match:" << getDebugName() << "\n";
         Operation *above_cast = nullptr;
         for (auto [index, operand] : llvm::enumerate(op->getOperands())) {
             if (isa<BlockArgument>(operand)) return llvm::failure();
@@ -225,7 +233,7 @@ struct BufferCastOpFold
                 return llvm::failure();
             }
         }
-
+        above_cast = op->getOperand(0).getDefiningOp();
         for (auto [index, res] : llvm::enumerate(op->getResults())) {
             rewriter.replaceAllUsesWith(res, above_cast->getOperand(index));
         }
@@ -261,9 +269,10 @@ struct DeviceRegionFusionPass
 };
 
 void DeviceRegionFusionPass::runOnOperation() {
-    llvm::outs() << "run in: " << getPassName() << "\n";
+    LLVM_DEBUG(llvm::dbgs() << llvm::formatv("run in: {0}\n", getPassName()));
     auto module = getOperation();
-    llvm::outs() << "root op: " << module.getName() << "\n";
+    LLVM_DEBUG(llvm::dbgs()
+               << llvm::formatv("root op: {0}\n", module.getName()));
 
     RewritePatternSet buffer_cast_patterns(&getContext());
     ::mlir::lumina::populateBufferCastOpCanonicalizationPatterns(
@@ -272,8 +281,7 @@ void DeviceRegionFusionPass::runOnOperation() {
     buffer_cast_config.setMaxIterations(10);
     buffer_cast_config.setUseTopDownTraversal(true);
     if (failed(applyPatternsGreedily(
-            getOperation(),
-            FrozenRewritePatternSet(std::move(buffer_cast_patterns)),
+            module, FrozenRewritePatternSet(std::move(buffer_cast_patterns)),
             buffer_cast_config))) {
         signalPassFailure();
     }
@@ -282,10 +290,11 @@ void DeviceRegionFusionPass::runOnOperation() {
     GreedyRewriteConfig config;
     bool changed;
     if (failed(applyPatternsGreedily(
-            getOperation(), FrozenRewritePatternSet(std::move(patterns)),
-            config, &changed))) {
+            module, FrozenRewritePatternSet(std::move(patterns)), config,
+            &changed))) {
         signalPassFailure();
     }
-    llvm::outs() << "region has changed: " << changed << "\n";
-    llvm::outs() << "run out: " << getPassName() << "\n\n";
+    LLVM_DEBUG(llvm::dbgs()
+               << llvm::formatv("region has changed: {0}\n", changed));
+    LLVM_DEBUG(llvm::dbgs() << llvm::formatv("run out: {0}\n", getPassName()));
 }

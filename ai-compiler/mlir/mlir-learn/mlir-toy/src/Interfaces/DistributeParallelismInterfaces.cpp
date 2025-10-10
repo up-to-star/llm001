@@ -20,7 +20,7 @@ namespace mlir {
     } else {
         llvm_unreachable("unsupported distribute parallelism attr");
     }
-    return llvm::success();
+    return llvm::failure();
 }
 
 bool DistributeParallelOp::supportDistributeParallelism() {

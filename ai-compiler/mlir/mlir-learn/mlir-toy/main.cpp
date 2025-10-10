@@ -417,6 +417,7 @@ void testPass() {
     pm.addNestedPass<mlir::func::FuncOp>(
         mlir::lumina::createDeviceRegionFusionPass());
     module->dump();
+    llvm::outs() << "=========\n";
     if (pm.run(module).failed()) {
         llvm::outs() << "Pass run failed\n";
     }
