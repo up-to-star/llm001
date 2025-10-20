@@ -2,6 +2,4 @@
 	path = cs336/assignment1-basics
 	url = git@github.com:up-to-star/assignment1-basics.git
 
-[submodule "cs336/assignment2-systems"]
-	path = cs336/assignment2-systems
-	url = ./cs336/assignment2-systems/
+
